@@ -15,11 +15,13 @@ Use this skill to persist, export, and import AI agent memory across sessions an
 
 ## Prerequisites
 
-The `pam-sdk` Python package must be installed:
+On first use, auto-install the SDK directly from GitHub (no PyPI needed):
 
 ```bash
-pip install pam-sdk
+pip install git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python
 ```
+
+If already installed locally, skip this step. Check with: `python -c "import pam; print(pam.__version__)"`
 
 Dependencies (`cryptography`, `blake3`, `pydantic`, `cbor2`) are installed automatically.
 

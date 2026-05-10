@@ -33,16 +33,19 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/saravi_microsoft/Portable-Agent-Memory"
-Documentation = "https://github.com/saravi_microsoft/Portable-Agent-Memory#readme"
-Repository = "https://github.com/saravi_microsoft/Portable-Agent-Memory"
-Issues = "https://github.com/saravi_microsoft/Portable-Agent-Memory/issues"
+Homepage = "https://github.com/santhoshravindran7/portable-agent-memory"
+Documentation = "https://github.com/santhoshravindran7/portable-agent-memory#readme"
+Repository = "https://github.com/santhoshravindran7/portable-agent-memory"
+Issues = "https://github.com/santhoshravindran7/portable-agent-memory/issues"
 
 [project.optional-dependencies]
 dev = [
     "pytest",
     "pytest-asyncio",
 ]
+
+[project.scripts]
+pam = "pam.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pam"]

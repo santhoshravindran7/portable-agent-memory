@@ -2,9 +2,9 @@
 
 ## Steps
 
-1. Install the Portable Agent Memory SDK:
+1. Install the Portable Agent Memory SDK directly from GitHub:
    ```bash
-   pip install pam-sdk
+   pip install git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python
    ```
 
 2. Copy the skill file:
@@ -14,6 +14,22 @@
    ```
 
 3. Done — your agent now has persistent, portable memory.
+
+## CLI Tool
+
+After installation, you also get the `pam` command:
+
+```bash
+pam remember "User prefers TypeScript and dark mode"
+pam remember --fact "project" "uses" "Next.js 14"
+pam recall
+pam export my_memory.pam
+pam import colleague_memory.pam
+pam inspect some_file.pam
+pam status
+```
+
+No code needed — manage agent memory from the command line.
 
 ## Verify
 
