@@ -120,6 +120,9 @@ print(context)  # Ready to inject into any LLM's context window
 | [`03_capability_scoping.py`](examples/03_capability_scoping.py) | Selective memory disclosure with capability tokens |
 | [`04_provenance_verification.py`](examples/04_provenance_verification.py) | Tamper-evident memory with Merkle-DAG |
 | [`05_multi_agent_handoff.py`](examples/05_multi_agent_handoff.py) | 3-agent team collaboration with scoped handoffs |
+| [`06_cross_model_validation.py`](examples/06_cross_model_validation.py) | Prove memory portability with secret facts + tamper detection |
+| [`07_enterprise_vendor_migration.py`](examples/07_enterprise_vendor_migration.py) | Healthcare AI vendor migration (Claude → GPT) with HIPAA compliance |
+| [`08_session_continuity.py`](examples/08_session_continuity.py) | Accumulate knowledge across 3 sessions — defeat session amnesia |
 
 Run any example:
 ```bash
