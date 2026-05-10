@@ -43,7 +43,12 @@ class FileTransport:
 
         This is the primary save method. Files are saved as human-readable
         JSON regardless of extension (recommended: ``.pam``).
+
+        Automatically computes root_hash if not already set, ensuring
+        that ``verify_integrity()`` passes on the loaded artifact.
         """
+        if not artifact.root_hash:
+            artifact.root_hash = artifact.compute_root_hash()
         p = Path(path)
         p.write_text(pretty_json(artifact), encoding="utf-8")
 
@@ -52,7 +57,11 @@ class FileTransport:
         """Save an artifact as CBOR for compact transport optimization.
 
         Recommended extension: ``.pam.cbor``
+
+        Automatically computes root_hash if not already set.
         """
+        if not artifact.root_hash:
+            artifact.root_hash = artifact.compute_root_hash()
         p = Path(path)
         p.write_bytes(serialize_cbor(artifact))
 
