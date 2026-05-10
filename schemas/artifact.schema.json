@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pam-protocol.org/schemas/artifact.schema.json",
+  "title": "Portable Agent Memory Artifact",
+  "description": "Top-level envelope for a Portable Agent Memory artifact. Contains agent provenance, cryptographic integrity fields, capability tokens, and the five memory components.",
+  "type": "object",
+  "properties": {
+    "pam_version": {
+      "type": "string",
+      "description": "Version of the Portable Agent Memory protocol this artifact conforms to.",
+      "const": "1.0"
+    },
+    "schema_version": {
+      "type": "string",
+      "description": "Version of the artifact envelope schema.",
+      "default": "1.0"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when this artifact was created."
+    },
+    "source_agent": {
+      "type": "object",
+      "description": "Provenance metadata identifying the agent that produced this artifact.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the source agent."
+        },
+        "model_family": {
+          "type": "string",
+          "description": "Model family the agent is based on.",
+          "examples": ["claude", "gpt", "gemini", "llama", "mistral"]
+        },
+        "runtime": {
+          "type": "string",
+          "description": "Framework or runtime the agent executes within.",
+          "examples": ["langchain", "crewai", "autogen", "custom"]
+        },
+        "version": {
+          "type": "string",
+          "description": "Version identifier for the agent or its runtime."
+        }
+      },
+      "required": ["name", "model_family", "runtime", "version"],
+      "additionalProperties": false
+    },
+    "root_hash": {
+      "type": "string",
+      "description": "BLAKE3 hash (hex-encoded) computed over the canonical serialization of the components object. Provides tamper-evident integrity.",
+      "pattern": "^blake3:[0-9a-f]{64}$"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Ed25519 signature (base64-encoded) over the root_hash, produced by the source agent's private key.",
+      "pattern": "^ed25519:[A-Za-z0-9+/=]+$"
+    },
+    "capability_tokens": {
+      "type": "array",
+      "description": "Capability tokens granting scoped permissions over entries in this artifact.",
+      "items": {
+        "$ref": "capability-token.schema.json"
+      },
+      "default": []
+    },
+    "components": {
+      "type": "object",
+      "description": "The five Portable Agent Memory components.",
+      "properties": {
+        "episodic": {
+          "type": "array",
+          "description": "Episodic memory — records of events, interactions, and observations.",
+          "items": {
+            "$ref": "entries.schema.json#/definitions/EpisodicEntry"
+          },
+          "default": []
+        },
+        "semantic": {
+          "type": "array",
+          "description": "Semantic memory — structured knowledge triples derived from experience.",
+          "items": {
+            "$ref": "entries.schema.json#/definitions/SemanticEntry"
+          },
+          "default": []
+        },
+        "procedural": {
+          "type": "array",
+          "description": "Procedural memory — learned skills, procedures, and executable routines.",
+          "items": {
+            "$ref": "entries.schema.json#/definitions/ProceduralEntry"
+          },
+          "default": []
+        },
+        "working": {
+          "type": "array",
+          "description": "Working memory — active goals, reasoning scratchpad, and pending actions.",
+          "items": {
+            "$ref": "entries.schema.json#/definitions/WorkingEntry"
+          },
+          "default": []
+        },
+        "identity": {
+          "type": "array",
+          "description": "Identity memory — persona, preferences, policies, and custom instructions.",
+          "items": {
+            "$ref": "entries.schema.json#/definitions/IdentityEntry"
+          },
+          "default": []
+        }
+      },
+      "required": ["episodic", "semantic", "procedural", "working", "identity"],
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary key-value metadata for extensibility.",
+      "additionalProperties": true,
+      "default": {}
+    }
+  },
+  "required": [
+    "pam_version",
+    "schema_version",
+    "created_at",
+    "source_agent",
+    "root_hash",
+    "signature",
+    "components"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,323 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pam-protocol.org/schemas/entries.schema.json",
+  "title": "Portable Agent Memory Entry Types",
+  "description": "Schema definitions for the five Portable Agent Memory entry types: episodic, semantic, procedural, working, and identity.",
+  "definitions": {
+    "BaseEntry": {
+      "type": "object",
+      "title": "BaseEntry",
+      "description": "Common fields shared by all Portable Agent Memory entries.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Content-addressable identifier computed as a BLAKE3 hash of the entry contents.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "parent_ids": {
+          "type": "array",
+          "description": "References to parent entries forming a provenance DAG.",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "default": []
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when this entry was created."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Free-form tags for categorization and filtering.",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "schema_version": {
+          "type": "string",
+          "description": "Version of the entry schema this entry conforms to.",
+          "default": "1.0"
+        }
+      },
+      "required": ["id", "created_at", "schema_version"]
+    },
+    "EpisodicEntry": {
+      "title": "EpisodicEntry",
+      "description": "A memory of a discrete event, interaction, or observation experienced by the agent.",
+      "allOf": [
+        { "$ref": "#/definitions/BaseEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp of when the event occurred."
+            },
+            "actor": {
+              "type": "string",
+              "description": "The entity that performed or initiated the event (e.g. user, agent, system)."
+            },
+            "observation": {
+              "type": "string",
+              "description": "Natural-language description of the event or observation."
+            },
+            "salience": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Importance score from 0 (trivial) to 1 (critical).",
+              "default": 0.5
+            },
+            "event_type": {
+              "type": "string",
+              "enum": ["interaction", "observation", "outcome", "reflection"],
+              "description": "Classification of the episodic event."
+            }
+          },
+          "required": ["timestamp", "actor", "observation", "event_type"]
+        }
+      ]
+    },
+    "SemanticEntry": {
+      "title": "SemanticEntry",
+      "description": "A structured knowledge triple extracted or derived from episodic memory.",
+      "allOf": [
+        { "$ref": "#/definitions/BaseEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string",
+              "description": "The subject of the knowledge triple."
+            },
+            "predicate": {
+              "type": "string",
+              "description": "The relationship or predicate connecting subject to object."
+            },
+            "object": {
+              "type": "string",
+              "description": "The object of the knowledge triple."
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Confidence score from 0 (uncertain) to 1 (certain).",
+              "default": 1.0
+            },
+            "source_event_ids": {
+              "type": "array",
+              "description": "References to episodic entry IDs from which this knowledge was derived.",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "default": []
+            }
+          },
+          "required": ["subject", "predicate", "object"]
+        }
+      ]
+    },
+    "ProceduralEntry": {
+      "title": "ProceduralEntry",
+      "description": "A reusable skill, procedure, or function the agent has learned or been taught.",
+      "allOf": [
+        { "$ref": "#/definitions/BaseEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Human-readable name of the procedure."
+            },
+            "description": {
+              "type": "string",
+              "description": "Summary of what the procedure does."
+            },
+            "parameters": {
+              "type": "array",
+              "description": "Formal parameters accepted by the procedure.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Parameter name."
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Parameter type (e.g. string, number, boolean, object)."
+                  },
+                  "required": {
+                    "type": "boolean",
+                    "description": "Whether this parameter is required.",
+                    "default": false
+                  }
+                },
+                "required": ["name", "type"]
+              },
+              "default": []
+            },
+            "body": {
+              "type": "string",
+              "description": "The procedure body — may be natural language instructions or executable code."
+            },
+            "language": {
+              "type": "string",
+              "description": "Language of the body content.",
+              "examples": ["natural", "python", "javascript", "typescript", "bash", "sql"],
+              "default": "natural"
+            },
+            "preconditions": {
+              "type": "array",
+              "description": "Conditions that must be true before this procedure can execute.",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "usage_count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of times this procedure has been invoked.",
+              "default": 0
+            },
+            "last_used": {
+              "type": ["string", "null"],
+              "format": "date-time",
+              "description": "ISO 8601 timestamp of the most recent invocation, or null if never used.",
+              "default": null
+            }
+          },
+          "required": ["name", "description", "body", "language"]
+        }
+      ]
+    },
+    "WorkingEntry": {
+      "title": "WorkingEntry",
+      "description": "Active goals, subgoals, scratchpad reasoning, and pending actions representing the agent's current working state.",
+      "allOf": [
+        { "$ref": "#/definitions/BaseEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "goals": {
+              "type": "array",
+              "description": "Top-level goals the agent is pursuing.",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "subgoals": {
+              "type": "array",
+              "description": "Decomposed subgoals with status and parent linkage.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "goal": {
+                    "type": "string",
+                    "description": "Description of the subgoal."
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Current status of the subgoal.",
+                    "enum": ["pending", "in_progress", "completed", "blocked", "abandoned"],
+                    "default": "pending"
+                  },
+                  "parent_goal": {
+                    "type": "string",
+                    "description": "The parent goal this subgoal contributes to."
+                  }
+                },
+                "required": ["goal", "status", "parent_goal"]
+              },
+              "default": []
+            },
+            "scratch": {
+              "type": "string",
+              "description": "Free-form scratchpad for intermediate reasoning, notes, or chain-of-thought.",
+              "default": ""
+            },
+            "pending_actions": {
+              "type": "array",
+              "description": "Actions queued for execution.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "description": "Name or description of the action."
+                  },
+                  "args": {
+                    "type": "object",
+                    "description": "Arguments to pass to the action.",
+                    "additionalProperties": true,
+                    "default": {}
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Current status of the action.",
+                    "enum": ["queued", "running", "completed", "failed"],
+                    "default": "queued"
+                  }
+                },
+                "required": ["action", "status"]
+              },
+              "default": []
+            }
+          },
+          "required": ["goals"]
+        }
+      ]
+    },
+    "IdentityEntry": {
+      "title": "IdentityEntry",
+      "description": "Persistent agent identity: persona, preferences, language, behavioral policies, and custom instructions.",
+      "allOf": [
+        { "$ref": "#/definitions/BaseEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "preferences": {
+              "type": "object",
+              "description": "Key-value map of agent preferences (e.g. verbosity, tone, output format).",
+              "additionalProperties": true,
+              "default": {}
+            },
+            "persona": {
+              "type": "string",
+              "description": "A natural-language description of the agent's persona or role.",
+              "default": ""
+            },
+            "language": {
+              "type": "string",
+              "description": "Preferred human language for interaction, as an ISO 639-1 code.",
+              "pattern": "^[a-z]{2}$",
+              "default": "en"
+            },
+            "policies": {
+              "type": "array",
+              "description": "Behavioral constraints and guardrails the agent must follow.",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "custom_instructions": {
+              "type": "string",
+              "description": "Free-form custom instructions provided by the user or system.",
+              "default": ""
+            }
+          },
+          "required": []
+        }
+      ]
+    }
+  }
+}

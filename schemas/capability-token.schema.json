@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pam-protocol.org/schemas/capability-token.schema.json",
+  "title": "Portable Agent Memory Capability Token",
+  "description": "A capability token that grants scoped, time-bounded permissions over Portable Agent Memory entries. Tokens are cryptographically signed by their issuer.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this capability token."
+    },
+    "scope": {
+      "type": "object",
+      "description": "Defines which entries this token grants access to.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["entry_ids", "component", "tag", "wildcard"],
+          "description": "Scoping strategy: 'entry_ids' targets specific entries, 'component' targets an entire memory component, 'tag' targets entries matching tags, 'wildcard' targets all entries."
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of entry IDs, component names, or tag values depending on scope type."
+            },
+            {
+              "type": "string",
+              "enum": ["*"],
+              "description": "Wildcard value matching all entries."
+            }
+          ],
+          "description": "The scope value — an array of identifiers or '*' for wildcard."
+        }
+      },
+      "required": ["type", "value"]
+    },
+    "permissions": {
+      "type": "array",
+      "description": "Set of permissions granted by this token.",
+      "items": {
+        "type": "string",
+        "enum": ["read", "write", "derive", "redact", "export", "rehydrate"]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "issuer": {
+      "type": "string",
+      "description": "Identifier of the entity that issued this token."
+    },
+    "issuer_signature": {
+      "type": "string",
+      "description": "Ed25519 signature over the token content (base64-encoded), produced by the issuer's private key."
+    },
+    "audience": {
+      "type": ["string", "null"],
+      "description": "Identifier of the target agent this token is issued to, or null if bearer-scoped.",
+      "default": null
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when this token was issued."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when this token expires."
+    },
+    "binding_params": {
+      "type": "object",
+      "description": "Optional additional constraints on the token (e.g. IP restrictions, rate limits).",
+      "additionalProperties": true,
+      "default": {}
+    }
+  },
+  "required": [
+    "id",
+    "scope",
+    "permissions",
+    "issuer",
+    "issuer_signature",
+    "issued_at",
+    "expires_at"
+  ],
+  "additionalProperties": false
+}

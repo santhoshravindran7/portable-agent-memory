@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pam-sdk"
+version = "0.1.0"
+description = "Python SDK for the Portable Agent Memory protocol"
+requires-python = ">=3.10"
+authors = [
+    {name = "Santhosh Kumar Ravindran"}
+]
+license = {text = "Apache-2.0"}
+readme = "../../README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "blake3",
+    "cbor2",
+    "cryptography",
+    "typing-extensions",
+]
+
+[project.urls]
+Homepage = "https://github.com/saravi_microsoft/Portable-Agent-Memory"
+Documentation = "https://github.com/saravi_microsoft/Portable-Agent-Memory#readme"
+Repository = "https://github.com/saravi_microsoft/Portable-Agent-Memory"
+Issues = "https://github.com/saravi_microsoft/Portable-Agent-Memory/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["pam"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
