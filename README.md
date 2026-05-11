@@ -54,9 +54,30 @@ Portable Agent Memory is JSON-first by design:
 
 ## Quick Start
 
+### Option 1: Marketplace Plugin (recommended — no install needed)
+
+| Platform | Install |
+|----------|---------|
+| **GitHub Copilot** | Install from [GitHub Marketplace](https://github.com/marketplace) → use `@pam remember ...` in chat |
+| **Claude Code** | `/plugin install portable-agent-memory` → use `/remember ...` |
+| **OpenAI Codex** | Copy `plugins/openai-codex/AGENTS.md` to your project root |
+| **Copilot CLI** | Copy `skills/copilot-cli/pam.md` to `~/.copilot/skills/pam/` |
+
+### Option 2: CLI (for power users)
+
 ```bash
-pip install pam-sdk
+pip install git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python
 ```
+
+```bash
+pam remember "I prefer TypeScript and dark mode"
+pam remember --fact "project" "uses" "Next.js 14"
+pam recall
+pam export my-memory.pam
+pam import colleague-memory.pam
+```
+
+### Option 3: Python SDK (for developers building integrations)
 
 ```python
 from pam import MemoryArtifact, SourceAgent, EpisodicEntry, SemanticEntry, IdentityEntry
@@ -149,7 +170,13 @@ pam-protocol/
 │   │   ├── serialization/       # JSON (pretty + canonical) & CBOR codecs
 │   │   └── transport/           # File-based transport (.pam JSON, .pam.cbor)
 │   └── tests/                   # 54 tests
-├── examples/                    # 5 runnable demo scripts
+├── examples/                    # 8 runnable demo scripts
+├── plugins/
+│   ├── github-copilot/          # GitHub Copilot Extension (Marketplace)
+│   ├── claude-code/             # Claude Code Plugin (MCP server + skills)
+│   └── openai-codex/            # OpenAI Codex (AGENTS.md)
+├── skills/
+│   └── copilot-cli/             # GitHub Copilot CLI skill
 └── README.md
 ```
 
@@ -193,8 +220,12 @@ pam-protocol/
 - [x] Protocol Specification v1.0
 - [x] Python SDK with 54 tests
 - [x] JSON Schemas
-- [x] Working examples
-- [ ] MCP Server (Portable Agent Memory as MCP tool)
+- [x] Working examples (8 scenarios)
+- [x] CLI tool (`pam remember`, `pam recall`, etc.)
+- [x] GitHub Copilot Extension (Marketplace plugin)
+- [x] Claude Code Plugin (MCP server + skills)
+- [x] OpenAI Codex integration (AGENTS.md)
+- [x] GitHub Copilot CLI skill
 - [ ] LangChain / CrewAI adapters
 - [ ] TypeScript SDK
 - [ ] Portable Agent Memory Cloud (managed verification + re-hydration service)
