@@ -1,0 +1,5 @@
+node_modules/
+.env
+*.pam
+*.pam.cbor
+.vercel/

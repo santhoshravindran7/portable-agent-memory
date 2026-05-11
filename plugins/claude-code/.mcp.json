@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "portable-agent-memory": {
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/pam-server.py"],
+      "env": {}
+    }
+  }
+}

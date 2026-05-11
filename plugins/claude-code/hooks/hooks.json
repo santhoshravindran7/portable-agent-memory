@@ -1,0 +1,11 @@
+{
+  "hooks": [
+    {
+      "name": "pam-auto-save",
+      "description": "Auto-save working context to Portable Agent Memory on session end",
+      "event": "Stop",
+      "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/pam-autosave.py\" save-working",
+      "timeout": 10000
+    }
+  ]
+}

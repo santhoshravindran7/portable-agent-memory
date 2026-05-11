@@ -1,0 +1,30 @@
+{
+  "name": "@pam/github-copilot-extension",
+  "version": "0.1.0",
+  "description": "GitHub Copilot Extension for Portable Agent Memory (PAM) — persistent, portable, cryptographically-verified memory for AI agents",
+  "main": "server.js",
+  "keywords": [
+    "github-copilot",
+    "copilot-extension",
+    "ai-memory",
+    "portable-agent-memory",
+    "pam"
+  ],
+  "author": "santhoshravindran7",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/santhoshravindran7/portable-agent-memory"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

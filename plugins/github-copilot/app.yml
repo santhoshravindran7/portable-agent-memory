@@ -1,0 +1,9 @@
+name: portable-agent-memory
+description: Persistent, portable, cryptographically-verified memory for AI agents
+url: https://github.com/santhoshravindran7/portable-agent-memory
+hook_attributes:
+  url: https://YOUR_DEPLOYMENT_URL/api/chat
+public: true
+default_events: []
+default_permissions:
+  contents: read

@@ -1,0 +1,8 @@
+{
+  "name": "portable-agent-memory",
+  "version": "0.1.0",
+  "description": "Persistent, portable, cryptographically-verified memory that travels with you across AI agents",
+  "author": "Santhosh Kumar Ravindran",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/santhoshravindran7/portable-agent-memory"
+}
