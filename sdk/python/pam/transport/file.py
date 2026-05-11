@@ -6,6 +6,9 @@ CBOR is available via ``.pam.cbor`` for bandwidth-sensitive transport.
 
 from __future__ import annotations
 
+import os
+import tempfile
+import warnings
 from pathlib import Path
 
 from ..models.artifact import MemoryArtifact
@@ -19,6 +22,7 @@ from ..serialization.codec import (
 
 # CBOR magic: first byte of CBOR-encoded maps/arrays is typically 0xa/0xb range
 _CBOR_MAP_MARKERS = (0xA0, 0xB0, 0xBF)
+MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
 
 
 def _looks_like_cbor(data: bytes) -> bool:
@@ -50,7 +54,22 @@ class FileTransport:
         if not artifact.root_hash:
             artifact.root_hash = artifact.compute_root_hash()
         p = Path(path)
-        p.write_text(pretty_json(artifact), encoding="utf-8")
+        if p.is_symlink():
+            raise ValueError(f"Refusing to write to symlink: {path}")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        content = pretty_json(artifact)
+        # Atomic write: temp file then rename
+        fd, tmp_path = tempfile.mkstemp(dir=p.parent, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(content)
+            os.replace(tmp_path, str(p))
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
 
     @staticmethod
     def save_compact(artifact: MemoryArtifact, path: str | Path) -> None:
@@ -63,29 +82,64 @@ class FileTransport:
         if not artifact.root_hash:
             artifact.root_hash = artifact.compute_root_hash()
         p = Path(path)
-        p.write_bytes(serialize_cbor(artifact))
+        if p.is_symlink():
+            raise ValueError(f"Refusing to write to symlink: {path}")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        data = serialize_cbor(artifact)
+        # Atomic write: temp file then rename
+        fd, tmp_path = tempfile.mkstemp(dir=p.parent, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(data)
+            os.replace(tmp_path, str(p))
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
 
     @staticmethod
     def load(path: str | Path) -> MemoryArtifact:
         """Load an artifact from disk with auto-detection.
 
-        Detects format by extension and content:
-        - ``.pam.cbor`` → CBOR
-        - ``.pam`` → JSON (with backward-compat: if content starts with CBOR
-          magic bytes, parses as CBOR for old files)
-        - ``.pam.json`` → JSON (legacy extension, still supported)
+        Detects format by file extension:
+        - ``.pam.cbor`` or ``.cbor`` → CBOR
+        - ``.pam`` or ``.pam.json`` → JSON
+        - No extension → byte inspection fallback with warning
         """
         p = Path(path)
+        if p.is_symlink():
+            raise ValueError(f"Refusing to read from symlink: {path}")
 
-        # Explicit CBOR extension
-        if p.name.endswith(".pam.cbor"):
-            return deserialize_cbor(p.read_bytes())
+        file_size = p.stat().st_size
+        if file_size > MAX_FILE_SIZE:
+            raise ValueError(
+                f"File size {file_size} exceeds maximum of {MAX_FILE_SIZE} bytes"
+            )
 
-        # JSON extensions (.pam or .pam.json) with CBOR backward compat
         data = p.read_bytes()
-        if _looks_like_cbor(data):
-            # Backward compat: old .pam files were CBOR
+
+        # Use file extension for format detection, not byte inspection
+        if p.suffix == ".cbor" or str(p).endswith(".pam.cbor"):
             return deserialize_cbor(data)
+
+        if p.suffix in (".pam", ".json") or str(p).endswith(".pam.json"):
+            # Backward compat: old .pam files may contain CBOR
+            if _looks_like_cbor(data):
+                return deserialize_cbor(data)
+            return deserialize_json(data.decode("utf-8"))
+
+        # Fallback for extensionless files — warn and use byte inspection
+        if not p.suffix:
+            warnings.warn(
+                "File has no extension — using byte inspection for format detection. "
+                "Use .pam or .pam.cbor extensions.",
+                stacklevel=2,
+            )
+            if _looks_like_cbor(data):
+                return deserialize_cbor(data)
+
         return deserialize_json(data.decode("utf-8"))
 
     # ------------------------------------------------------------------

@@ -172,13 +172,13 @@ class TestFileTransport:
         assert restored.root_hash == artifact.root_hash
 
     def test_auto_detect_cbor_in_pam_file(self, tmp_path):
-        """Backward compat: if a .pam file contains CBOR, still parse it."""
+        """CBOR files should use .pam.cbor extension; .pam files are JSON-only (SEC-009)."""
         artifact = _make_artifact()
         artifact.root_hash = artifact.compute_root_hash()
-        path = tmp_path / "legacy.pam"
-        # Write raw CBOR bytes to a .pam file (simulating old behavior)
+        path = tmp_path / "legacy.pam.cbor"
+        # Write raw CBOR bytes to a .pam.cbor file
         path.write_bytes(serialize_cbor(artifact))
-        # load() should auto-detect CBOR and parse correctly
+        # load() should detect CBOR via extension
         restored = FileTransport.load(path)
         assert restored.source_agent.name == "test-agent"
         assert restored.root_hash == artifact.root_hash

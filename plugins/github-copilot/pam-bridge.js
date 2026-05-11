@@ -8,6 +8,7 @@ const path = require("path");
 const PYTHON = process.env.PAM_PYTHON || (process.platform === "win32" ? "python" : "python3");
 const SDK_ROOT = path.resolve(__dirname, "..", "..", "sdk", "python");
 const DATA_DIR = process.env.PAM_DATA_DIR || path.join(__dirname, "data");
+const MAX_INPUT_SIZE = 100 * 1024; // 100KB — reject oversized inputs
 
 /**
  * Run an inline Python script that imports the PAM SDK.
@@ -40,7 +41,17 @@ function ensureDataDir() {
 
 /** Path to the per-user artifact file. */
 function artifactPath(userId) {
-  return path.join(DATA_DIR, `${sanitize(userId)}.pam`);
+  const filePath = path.join(DATA_DIR, `${sanitize(userId)}.pam`);
+  return safePath(filePath);
+}
+
+function safePath(filepath) {
+  const resolved = path.resolve(filepath);
+  const dataDir = path.resolve(DATA_DIR);
+  if (!resolved.startsWith(dataDir)) {
+    throw new Error(`Path traversal blocked: ${filepath}`);
+  }
+  return resolved;
 }
 
 function sanitize(s) {
@@ -51,6 +62,13 @@ function sanitize(s) {
 
 async function remember(userId, text, opts = {}) {
   ensureDataDir();
+  if (typeof text === "string" && text.length > MAX_INPUT_SIZE) {
+    throw new Error(`Input too large: ${text.length} bytes exceeds ${MAX_INPUT_SIZE} byte limit`);
+  }
+  const optsStr = JSON.stringify(opts);
+  if (optsStr.length > MAX_INPUT_SIZE) {
+    throw new Error(`Options too large: ${optsStr.length} bytes exceeds ${MAX_INPUT_SIZE} byte limit`);
+  }
   const filePath = artifactPath(userId);
   const escaped = JSON.stringify(text);
   const optsJson = JSON.stringify(opts);
@@ -112,6 +130,9 @@ print(json.dumps({"ok": True, "kind": kind, "id": entry.id}))
 
 async function recall(userId, query = "") {
   ensureDataDir();
+  if (typeof query === "string" && query.length > MAX_INPUT_SIZE) {
+    throw new Error(`Query too large: ${query.length} bytes exceeds ${MAX_INPUT_SIZE} byte limit`);
+  }
   const filePath = artifactPath(userId);
   const escaped = JSON.stringify(query);
 
@@ -175,6 +196,15 @@ print(artifact.to_json(pretty=True))
 
 async function importArtifact(userId, jsonContent) {
   ensureDataDir();
+  if (typeof jsonContent === "string" && jsonContent.length > MAX_INPUT_SIZE) {
+    throw new Error(`Import content too large: ${jsonContent.length} bytes exceeds ${MAX_INPUT_SIZE} byte limit`);
+  }
+  // Validate JSON before passing to Python
+  try {
+    JSON.parse(jsonContent);
+  } catch (_) {
+    throw new Error("Invalid JSON: importArtifact requires valid JSON content");
+  }
   const filePath = artifactPath(userId);
   const escaped = JSON.stringify(jsonContent);
 

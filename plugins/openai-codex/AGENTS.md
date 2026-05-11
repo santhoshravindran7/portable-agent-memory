@@ -5,7 +5,8 @@ You have access to **Portable Agent Memory** — a persistent, portable, cryptog
 ## Setup (first use only)
 
 ```bash
-pip install git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python
+# NOTE: In production, pin to a tagged release or PyPI package with hash verification.
+pip install "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python"
 ```
 
 Or if the repo is local: `pip install -e sdk/python`

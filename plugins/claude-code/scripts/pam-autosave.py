@@ -22,13 +22,14 @@ def _ensure_pam_sdk() -> None:
     if (local_sdk / "pyproject.toml").exists():
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "-q", "-e", str(local_sdk)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
         )
     else:
+        # NOTE: In production, pin to a tagged release or PyPI package with hash verification.
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "-q",
-             "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+             "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
         )
 
 

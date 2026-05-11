@@ -32,16 +32,17 @@ def _ensure_pam_sdk() -> None:
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "-q", "-e", str(local_sdk)],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
         )
     else:
+        # NOTE: In production, pin to a tagged release or PyPI package with hash verification.
         subprocess.check_call(
             [
                 sys.executable, "-m", "pip", "install", "-q",
-                "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python",
+                "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python",
             ],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
         )
 
 
@@ -207,6 +208,34 @@ def tool_pam_recall(query: str = "", type: str = "all") -> dict:
     return {"total": total, "query": query, "results": results}
 
 
+def _safe_path(filepath: str) -> Path:
+    """Resolve path and ensure it's within allowed directories."""
+    resolved = Path(filepath).resolve()
+    allowed_dirs = [Path.home() / ".pam", Path.cwd()]
+    if not any(str(resolved).startswith(str(d.resolve())) for d in allowed_dirs):
+        raise ValueError(f"Path {filepath} is outside allowed directories (~/.pam/ or current directory)")
+    return resolved
+
+
+def _validate_tool_args(tool_name: str, tool_args: dict, tools_list: list) -> bool:
+    """Validate args match the declared inputSchema."""
+    tool_def = next((t for t in tools_list if t["name"] == tool_name), None)
+    if not tool_def:
+        return False
+    schema = tool_def.get("inputSchema", {})
+    required = schema.get("required", [])
+    properties = schema.get("properties", {})
+    # Check no unexpected args
+    for key in tool_args:
+        if key not in properties:
+            raise ValueError(f"Unexpected argument: {key}")
+    # Check required args
+    for req in required:
+        if req not in tool_args:
+            raise ValueError(f"Missing required argument: {req}")
+    return True
+
+
 def tool_pam_export(filepath: str = "") -> dict:
     """Export memories to a .pam file."""
     artifact = _load_artifact()
@@ -214,7 +243,7 @@ def tool_pam_export(filepath: str = "") -> dict:
         filepath = "memory-export.pam"
     if not filepath.endswith(".pam"):
         filepath += ".pam"
-    path = Path(filepath).resolve()
+    path = _safe_path(filepath)
     _save_artifact(artifact)
     FileTransport.save(artifact, str(path))
     total = len(artifact.all_entries())
@@ -230,7 +259,7 @@ def tool_pam_export(filepath: str = "") -> dict:
 
 def tool_pam_import(filepath: str) -> dict:
     """Import memories from a .pam file."""
-    path = Path(filepath).resolve()
+    path = _safe_path(filepath)
     if not path.exists():
         return {"error": f"File not found: {path}"}
     incoming = FileTransport.load(str(path))
@@ -477,6 +506,13 @@ def _handle_request(request: dict) -> dict:
             }
 
         try:
+            # Validate tool arguments against declared schema
+            tool_list = [
+                {"name": n, "inputSchema": s["inputSchema"]}
+                for n, s in TOOLS.items()
+            ]
+            _validate_tool_args(tool_name, tool_args, tool_list)
+
             result = TOOLS[tool_name]["fn"](**tool_args)
             return {
                 "jsonrpc": "2.0",
@@ -487,11 +523,15 @@ def _handle_request(request: dict) -> dict:
                 },
             }
         except Exception as exc:
+            error_msg = str(exc)
+            # Strip home directory path from error messages
+            home = str(Path.home())
+            error_msg = error_msg.replace(home, "~")
             return {
                 "jsonrpc": "2.0",
                 "id": req_id,
                 "result": {
-                    "content": [{"type": "text", "text": json.dumps({"error": str(exc)})}],
+                    "content": [{"type": "text", "text": json.dumps({"error": error_msg})}],
                     "isError": True,
                 },
             }

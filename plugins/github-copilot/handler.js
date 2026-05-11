@@ -37,8 +37,14 @@ async function handleChat(req, res) {
     const userText = lastMsg?.content || "";
     const userId =
       req.headers["x-github-user"] ||
-      req.body?.copilot_user?.login ||
-      "default";
+      req.body?.copilot_user?.login;
+
+    if (!userId) {
+      sendContent(res, "❌ **Error:** No user identity provided.");
+      sendDone(res);
+      res.end();
+      return;
+    }
 
     const cmd = parseCommand(userText);
 

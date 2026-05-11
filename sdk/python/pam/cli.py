@@ -50,12 +50,25 @@ def _ensure_dirs() -> None:
 
 
 def _get_or_create_key() -> Ed25519PrivateKey:
+    import os
+
     _ensure_dirs()
     key_path = KEYS_DIR / "agent.key"
     if key_path.exists():
+        # Warn if key file permissions are too permissive (non-Windows)
+        if sys.platform != "win32":
+            mode = key_path.stat().st_mode & 0o777
+            if mode & 0o077:  # group or other has access
+                print(
+                    f"  ⚠️  WARNING: Key file {key_path} has permissions {oct(mode)}"
+                    " — should be 0600",
+                    file=sys.stderr,
+                )
         return Ed25519PrivateKey.from_private_bytes(key_path.read_bytes())
     key = Ed25519PrivateKey.generate()
     key_path.write_bytes(key.private_bytes_raw())
+    if sys.platform != "win32":
+        os.chmod(key_path, 0o600)
     pub_path = KEYS_DIR / "agent.pub"
     pub_path.write_bytes(key.public_key().public_bytes_raw())
     print(f"  Generated new signing key at {key_path}")

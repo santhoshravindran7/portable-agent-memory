@@ -18,7 +18,8 @@ Use this skill to persist, export, and import AI agent memory across sessions an
 On first use, auto-install the SDK directly from GitHub (no PyPI needed):
 
 ```bash
-pip install git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python
+# NOTE: In production, pin to a tagged release or PyPI package with hash verification.
+pip install "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python"
 ```
 
 If already installed locally, skip this step. Check with: `python -c "import pam; print(pam.__version__)"`

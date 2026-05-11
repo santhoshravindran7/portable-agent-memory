@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.serialization import (
     PrivateFormat,
     PublicFormat,
 )
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from .base import BaseEntry
 from .entries import (
@@ -31,6 +31,13 @@ from .entries import (
 
 if TYPE_CHECKING:
     from ..capabilities.tokens import CapabilityToken
+
+# Spec-defined entry count limits
+_MAX_EPISODIC = 100_000
+_MAX_SEMANTIC = 50_000
+_MAX_PROCEDURAL = 10_000
+_MAX_WORKING = 1_000
+_MAX_IDENTITY = 100
 
 
 class SourceAgent(BaseModel):
@@ -47,7 +54,7 @@ class SourceAgent(BaseModel):
 class MemoryArtifact(BaseModel):
     """Top-level Portable Agent Memory container with provenance and cryptographic integrity."""
 
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     pam_version: str = "1.0"
     schema_version: str = "1.0"
@@ -62,6 +69,41 @@ class MemoryArtifact(BaseModel):
     working: list[WorkingEntry] = []
     identity: list[IdentityEntry] = []
     metadata: dict = {}
+
+    @field_validator("episodic")
+    @classmethod
+    def validate_episodic_count(cls, v: list) -> list:
+        if len(v) > _MAX_EPISODIC:
+            raise ValueError(f"Episodic entries exceed maximum of {_MAX_EPISODIC}")
+        return v
+
+    @field_validator("semantic")
+    @classmethod
+    def validate_semantic_count(cls, v: list) -> list:
+        if len(v) > _MAX_SEMANTIC:
+            raise ValueError(f"Semantic entries exceed maximum of {_MAX_SEMANTIC}")
+        return v
+
+    @field_validator("procedural")
+    @classmethod
+    def validate_procedural_count(cls, v: list) -> list:
+        if len(v) > _MAX_PROCEDURAL:
+            raise ValueError(f"Procedural entries exceed maximum of {_MAX_PROCEDURAL}")
+        return v
+
+    @field_validator("working")
+    @classmethod
+    def validate_working_count(cls, v: list) -> list:
+        if len(v) > _MAX_WORKING:
+            raise ValueError(f"Working entries exceed maximum of {_MAX_WORKING}")
+        return v
+
+    @field_validator("identity")
+    @classmethod
+    def validate_identity_count(cls, v: list) -> list:
+        if len(v) > _MAX_IDENTITY:
+            raise ValueError(f"Identity entries exceed maximum of {_MAX_IDENTITY}")
+        return v
 
     def model_post_init(self, __context: object) -> None:
         if not self.created_at:
@@ -103,12 +145,15 @@ class MemoryArtifact(BaseModel):
         If public_key_bytes is provided, also verify the cryptographic signature.
         If the artifact is signed but no public key is provided, signature
         verification is skipped (integrity-only check).
+        Returns False if a public key is provided but no signature is present.
         """
         if not self.verify_integrity():
             return False
         if public_key_bytes and self.signature:
             return self.verify_signature(public_key_bytes)
-        return True
+        if public_key_bytes and not self.signature:
+            return False  # Expected signature but none present
+        return True  # No key provided, integrity passed
 
     # ------------------------------------------------------------------
     # Signing
@@ -161,9 +206,18 @@ class MemoryArtifact(BaseModel):
         """Serialize to CBOR (compact transport optimization)."""
         return cbor2.dumps(self.model_dump(mode="json"))
 
+    MAX_JSON_SIZE: ClassVar[int] = 50 * 1024 * 1024  # 50MB
+
     @classmethod
-    def from_json(cls, data: str) -> MemoryArtifact:
+    def from_json(cls, data: str | bytes) -> MemoryArtifact:
         """Deserialize from JSON string (pretty or canonical)."""
+        if isinstance(data, str):
+            data = data.encode("utf-8")
+        if len(data) > cls.MAX_JSON_SIZE:
+            raise ValueError(
+                f"JSON data size ({len(data)} bytes) exceeds maximum of"
+                f" {cls.MAX_JSON_SIZE} bytes"
+            )
         return cls.model_validate_json(data)
 
     @classmethod

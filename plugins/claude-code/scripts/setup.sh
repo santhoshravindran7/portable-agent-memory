@@ -17,7 +17,8 @@ if [ -f "$SDK_LOCAL/pyproject.toml" ]; then
     python3 -m pip install -q -e "$SDK_LOCAL"
 else
     echo "   Installing from GitHub..."
-    python3 -m pip install -q "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python"
+    # NOTE: In production, pin to a tagged release or PyPI package with hash verification.
+    python3 -m pip install -q "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python"
 fi
 echo "   ✅ PAM SDK installed"
 
@@ -45,6 +46,8 @@ pub = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
 pam_home = Path('$PAM_HOME')
 (pam_home / 'signing.key').write_bytes(priv)
 (pam_home / 'signing.pub').write_bytes(pub)
+import os
+os.chmod(pam_home / 'signing.key', 0o600)
 print('   ✅ Keys generated')
 print(f'   Private key: {pam_home}/signing.key')
 print(f'   Public key:  {pam_home}/signing.pub')

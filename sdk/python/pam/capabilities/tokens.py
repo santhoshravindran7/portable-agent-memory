@@ -19,7 +19,7 @@ from ..models.base import BaseEntry
 class CapabilityScope(BaseModel):
     """Defines what entries a capability token grants access to."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     type: Literal["entry_ids", "component", "tag", "wildcard"]
     value: list[str] | str
@@ -28,7 +28,7 @@ class CapabilityScope(BaseModel):
 class CapabilityToken(BaseModel):
     """A signed token granting scoped permissions over memory entries."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: str = ""
     scope: CapabilityScope
@@ -92,12 +92,18 @@ class CapabilityValidator:
         token: CapabilityToken,
         public_key: bytes,
         audience: str | None = None,
+        require_expiry: bool = False,
     ) -> bool:
         """Validate signature, expiration, and audience match.
-        
+
         If the token specifies an audience, it is always enforced —
         the caller must provide a matching audience string.
+
+        If ``require_expiry`` is True, tokens without an ``expires_at``
+        value are rejected.
         """
+        if require_expiry and not token.expires_at:
+            return False
         if token.is_expired():
             return False
         if not token.verify_signature(public_key):
@@ -106,6 +112,15 @@ class CapabilityValidator:
         if token.audience is not None:
             if audience is None or token.audience != audience:
                 return False
+        # Warn if token has no audience restriction (bearer token behavior)
+        if token.audience is None:
+            import warnings
+
+            warnings.warn(
+                f"Capability token {token.id} has no audience restriction —"
+                " accepting as bearer token.",
+                stacklevel=2,
+            )
         return True
 
     def filter_entries(

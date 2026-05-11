@@ -12,7 +12,7 @@ from .base import BaseEntry
 class EpisodicEntry(BaseEntry):
     """Records a specific event or interaction."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     timestamp: str = ""
     actor: str = ""
@@ -26,7 +26,7 @@ class EpisodicEntry(BaseEntry):
 class SemanticEntry(BaseEntry):
     """A knowledge triple (subject-predicate-object) with confidence."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     subject: str = ""
     predicate: str = ""
@@ -38,7 +38,7 @@ class SemanticEntry(BaseEntry):
 class ProceduralEntry(BaseEntry):
     """A reusable skill or procedure."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     name: str = ""
     description: str = ""
@@ -55,7 +55,7 @@ class ProceduralEntry(BaseEntry):
 class WorkingEntry(BaseEntry):
     """Current working memory: goals, sub-goals, scratch-pad."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     goals: list[str] = []
     subgoals: list[dict] = []
@@ -66,7 +66,7 @@ class WorkingEntry(BaseEntry):
 class IdentityEntry(BaseEntry):
     """Agent identity, preferences, and policies."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     preferences: dict = {}
     persona: str = ""

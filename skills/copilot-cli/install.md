@@ -4,7 +4,8 @@
 
 1. Install the Portable Agent Memory SDK directly from GitHub:
    ```bash
-   pip install git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python
+   # NOTE: In production, pin to a tagged release or PyPI package with hash verification.
+   pip install "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python"
    ```
 
 2. Copy the skill file:

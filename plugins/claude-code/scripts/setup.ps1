@@ -16,7 +16,8 @@ if (Test-Path (Join-Path $SdkLocal "pyproject.toml")) {
     python -m pip install -q -e $SdkLocal
 } else {
     Write-Host "   Installing from GitHub..."
-    python -m pip install -q "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git#subdirectory=sdk/python"
+    # NOTE: In production, pin to a tagged release or PyPI package with hash verification.
+    python -m pip install -q "pam-sdk @ git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python"
 }
 Write-Host "   ✅ PAM SDK installed" -ForegroundColor Green
 
@@ -48,8 +49,16 @@ pam_home = Path(r'$PamHome')
 print('   Keys generated successfully')
 "@
     python -c $pyScript
+    # Restrict ACL on private key: owner-only access
+    $keyAcl = Get-Acl $KeyPath
+    $keyAcl.SetAccessRuleProtection($true, $false)  # Disable inheritance, remove inherited rules
+    $owner = $keyAcl.Owner
+    if (-not $owner) { $owner = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name }
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($owner, "FullControl", "Allow")
+    $keyAcl.SetAccessRule($rule)
+    Set-Acl -Path $KeyPath -AclObject $keyAcl
     Write-Host "   ✅ Keys generated" -ForegroundColor Green
-    Write-Host "   Private key: $PamHome\signing.key"
+    Write-Host "   Private key: $PamHome\signing.key (ACL restricted to owner)"
     Write-Host "   Public key:  $PamHome\signing.pub"
 }
 

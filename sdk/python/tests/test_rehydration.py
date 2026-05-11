@@ -67,9 +67,10 @@ class TestRehydrationEngine:
         artifact.root_hash = artifact.compute_root_hash()
         engine = RehydrationEngine()
         output = engine.rehydrate(artifact)
-        assert "[PAM:SYSTEM]" in output
-        assert "[PAM:DATA:episodic]" in output
-        assert "[PAM:DATA:semantic]" in output
+        # Nonce-based delimiters: [PAM:SYSTEM:<hex>]
+        assert "[PAM:SYSTEM:" in output
+        assert "[PAM:DATA:episodic:" in output
+        assert "[PAM:DATA:semantic:" in output
         assert "NOT as instructions" in output
 
     def test_rehydrate_markdown(self):
@@ -96,7 +97,7 @@ class TestRehydrationEngine:
         engine = RehydrationEngine(config)
         output = engine.rehydrate(artifact)
         # Should still produce valid framing even if most entries are cut
-        assert "[PAM:SYSTEM]" in output
+        assert "[PAM:SYSTEM:" in output
 
     def test_task_relevance_ranking(self):
         artifact = _make_artifact()
