@@ -9,7 +9,11 @@
 
 ## 1. Executive Summary
 
-The PAM SDK demonstrates sound cryptographic design fundamentals — BLAKE3 content-addressable hashing and Ed25519 signing are correctly implemented using established libraries. However, the project has **critical prompt injection vulnerabilities** in the rehydration engine that can be bypassed despite existing mitigations, **serious key management weaknesses** (private keys stored as world-readable raw bytes with no passphrase protection), **no file size or entry count limits enforced** at the SDK level despite the spec mandating them, and **remote code execution risk through supply chain** via `pip install git+https://...` auto-install patterns in plugins. The GitHub Copilot Extension has a **command injection vulnerability** through unsanitized user input passed into Python `exec`-style evaluation via `child_process`. The overall security posture is **not ready for production use** without addressing the CRITICAL and HIGH findings below.
+The PAM SDK demonstrates sound cryptographic design fundamentals — BLAKE3 content-addressable hashing and Ed25519 signing are correctly implemented using established libraries.
+
+**Post-remediation status (May 2026):** All 3 CRITICAL, 5 HIGH, and 5 MEDIUM vulnerabilities identified in this audit have been fixed. Key mitigations include: Unicode NFKC normalization and per-session nonce framing for prompt injection defense, input size validation and JSON pre-validation for command injection prevention, branch-pinned install URLs with visible stderr for supply chain risk reduction, chmod 0600 key file permissions, spec-mandated entry count limits, atomic writes with symlink protection, and request signature verification with rate limiting. 7 LOW/Informational items remain documented for v0.2. See individual findings below for remediation details.
+
+**Note:** This is a v0.1.0 alpha release. The examples simulate enterprise scenarios for demonstration purposes — the protocol has not yet been validated in production environments.
 
 ---
 
