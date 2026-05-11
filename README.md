@@ -212,7 +212,7 @@ pam-protocol/
 | Capability scoping | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Injection defense | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Working SDK | ✅ | ✅ | ✅ | Partial | ✅ | ✅ |
-| SaaS available | 🔜 | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Platform integrations | ✅ (Copilot, Claude, Codex) | Proprietary | Proprietary | ❌ | ❌ | ❌ |
 | Open protocol | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
 
 ## Roadmap
@@ -228,8 +228,8 @@ pam-protocol/
 - [x] GitHub Copilot CLI skill
 - [ ] LangChain / CrewAI adapters
 - [ ] TypeScript SDK
-- [ ] Portable Agent Memory Cloud (managed verification + re-hydration service)
-- [ ] Memory Marketplace
+- [ ] Azure AI Foundry integration
+- [ ] Microsoft Fabric OneLake storage backend
 - [ ] Conformance certification program
 
 ## Protocol Specification
