@@ -167,53 +167,120 @@ def cmd_remember(args: argparse.Namespace) -> None:
 def cmd_recall(args: argparse.Namespace) -> None:
     """Show what's in memory."""
     if not CURRENT_ARTIFACT.exists():
-        print("  No memories yet. Use 'pam remember' to start.")
+        if getattr(args, "json", False):
+            print("[]")
+        else:
+            print("  No memories yet. Use 'pam remember' to start.")
         return
 
     artifact = FileTransport.load(str(CURRENT_ARTIFACT))
+    entries = artifact.all_entries()
+
+    # Filter by search query if provided
+    if args.search:
+        query = args.search.lower()
+        filtered = []
+        for e in entries:
+            text = ""
+            if hasattr(e, "observation"):
+                text = e.observation
+            elif hasattr(e, "subject"):
+                text = f"{e.subject} {e.predicate} {e.object}"
+            elif hasattr(e, "name"):
+                text = f"{e.name} {e.description}"
+            elif hasattr(e, "persona"):
+                text = f"{e.persona} {e.preferences}"
+            elif hasattr(e, "goals"):
+                text = " ".join(e.goals)
+            if query in text.lower():
+                filtered.append(e)
+        entries = filtered
+
+    # JSON output for programmatic access (VS Code extension, etc.)
+    if getattr(args, "json", False):
+        result = []
+        for e in entries:
+            item: dict = {"id": str(e.id)}
+            if hasattr(e, "observation"):
+                item["type"] = "episodic"
+                item["content"] = e.observation
+                item["timestamp"] = e.timestamp
+            elif hasattr(e, "subject"):
+                item["type"] = "semantic"
+                item["content"] = f"{e.subject} {e.predicate} {e.object}"
+                item["subject"] = e.subject
+                item["predicate"] = e.predicate
+                item["object"] = e.object
+            elif hasattr(e, "name"):
+                item["type"] = "procedural"
+                item["content"] = e.description
+                item["name"] = e.name
+                item["description"] = e.description
+            elif hasattr(e, "persona"):
+                item["type"] = "identity"
+                item["content"] = str(e.preferences) if e.preferences else e.persona
+            elif hasattr(e, "goals"):
+                item["type"] = "working"
+                item["content"] = ", ".join(e.goals)
+            result.append(item)
+        print(json.dumps(result))
+        return
+
     total = len(artifact.all_entries())
 
     print(f"\n  Portable Agent Memory — {total} entries")
     print(f"  Source: {artifact.source_agent.name} ({artifact.source_agent.model_family})")
     print(f"  Signed: {'Yes' if artifact.signature else 'No'}")
+    if args.search:
+        print(f"  Search: '{args.search}' — {len(entries)} matches")
     print()
 
     if artifact.episodic:
-        print(f"  Episodes ({len(artifact.episodic)}):")
-        for e in artifact.episodic[-(args.limit or 10) :]:
-            ts = e.timestamp[:10] if e.timestamp else "?"
-            print(f"    [{ts}] {e.observation[:100]}")
-        print()
+        eps = [e for e in entries if hasattr(e, "observation")] if args.search else artifact.episodic
+        if eps:
+            print(f"  Episodes ({len(eps)}):")
+            for e in eps[-(args.limit or 10) :]:
+                ts = e.timestamp[:10] if e.timestamp else "?"
+                print(f"    [{ts}] {e.observation[:100]}")
+            print()
 
     if artifact.semantic:
-        print(f"  Facts ({len(artifact.semantic)}):")
-        for s in artifact.semantic:
-            print(f"    {s.subject} {s.predicate} {s.object}")
-        print()
+        sems = [e for e in entries if hasattr(e, "subject")] if args.search else artifact.semantic
+        if sems:
+            print(f"  Facts ({len(sems)}):")
+            for s in sems:
+                print(f"    {s.subject} {s.predicate} {s.object}")
+            print()
 
     if artifact.procedural:
-        print(f"  Skills ({len(artifact.procedural)}):")
-        for p in artifact.procedural:
-            print(f"    {p.name}: {p.description}")
-        print()
+        procs = [e for e in entries if hasattr(e, "name") and hasattr(e, "description")] if args.search else artifact.procedural
+        if procs:
+            print(f"  Skills ({len(procs)}):")
+            for p in procs:
+                print(f"    {p.name}: {p.description}")
+            print()
 
     if artifact.identity:
-        print(f"  Identity ({len(artifact.identity)}):")
-        for i in artifact.identity:
-            if i.persona:
-                print(f"    Persona: {i.persona}")
-            if i.preferences:
-                print(f"    Preferences: {i.preferences}")
-            if i.policies:
-                print(f"    Policies: {', '.join(i.policies)}")
-        print()
+        ids = [e for e in entries if hasattr(e, "persona")] if args.search else artifact.identity
+        if ids:
+            print(f"  Identity ({len(ids)}):")
+            for i in ids:
+                if i.persona:
+                    print(f"    Persona: {i.persona}")
+                if i.preferences:
+                    print(f"    Preferences: {i.preferences}")
+                if i.policies:
+                    print(f"    Policies: {', '.join(i.policies)}")
+            print()
 
     if artifact.working:
-        print(f"  Working State ({len(artifact.working)}):")
-        for w in artifact.working:
-            if w.goals:
-                print(f"    Goals: {', '.join(w.goals)}")
-        print()
+        wrk = [e for e in entries if hasattr(e, "goals")] if args.search else artifact.working
+        if wrk:
+            print(f"  Working State ({len(wrk)}):")
+            for w in wrk:
+                if w.goals:
+                    print(f"    Goals: {', '.join(w.goals)}")
+            print()
 
 
 def cmd_export(args: argparse.Namespace) -> None:
@@ -355,6 +422,22 @@ def cmd_verify(args: argparse.Namespace) -> None:
 
 def cmd_status(args: argparse.Namespace) -> None:
     """Show Portable Agent Memory status."""
+    if getattr(args, "json", False):
+        # JSON output for programmatic access (VS Code extension, etc.)
+        result = {"total": 0, "episodic": 0, "semantic": 0, "procedural": 0, "working": 0, "identity": 0}
+        if CURRENT_ARTIFACT.exists():
+            artifact = FileTransport.load(str(CURRENT_ARTIFACT))
+            result = {
+                "total": len(artifact.all_entries()),
+                "episodic": len(artifact.episodic),
+                "semantic": len(artifact.semantic),
+                "procedural": len(artifact.procedural),
+                "working": len(artifact.working),
+                "identity": len(artifact.identity),
+            }
+        print(json.dumps(result))
+        return
+
     print(f"\n  Portable Agent Memory CLI v0.1.0")
     print(f"  Storage: {PAM_DIR}")
     print(f"  Keys:    {KEYS_DIR}")
@@ -413,6 +496,8 @@ def main() -> None:
     # recall
     p_recall = subparsers.add_parser("recall", help="Show stored memories")
     p_recall.add_argument("--limit", type=int, default=10, help="Max episodes to show")
+    p_recall.add_argument("--json", action="store_true", help="Output as JSON (for integrations)")
+    p_recall.add_argument("--search", type=str, default="", help="Search memories by keyword")
 
     # export
     p_export = subparsers.add_parser("export", help="Export memory to a .pam file")
@@ -434,7 +519,8 @@ def main() -> None:
     p_verify.add_argument("--pubkey", help="Path to public key file for signature verification")
 
     # status
-    subparsers.add_parser("status", help="Show Portable Agent Memory status")
+    p_status = subparsers.add_parser("status", help="Show Portable Agent Memory status")
+    p_status.add_argument("--json", action="store_true", help="Output as JSON (for integrations)")
 
     # clear
     p_clear = subparsers.add_parser("clear", help="Clear all stored memories")

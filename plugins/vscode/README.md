@@ -77,4 +77,4 @@ PAM memories work across:
 
 ## 📄 License
 
-MIT — See [repository](https://github.com/santhoshravindran7/portable-agent-memory) for details.
+Apache-2.0 — See [repository](https://github.com/santhoshravindran7/portable-agent-memory) for details.

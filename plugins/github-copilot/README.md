@@ -124,4 +124,4 @@ curl -X POST http://localhost:3000/api/chat \
 
 ## License
 
-MIT — see [LICENSE](../../LICENSE)
+Apache-2.0 — see [LICENSE](../../LICENSE)

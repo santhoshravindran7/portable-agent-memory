@@ -4,6 +4,7 @@
   "description": "Persistent, portable, cryptographically-verified memory for AI agents. Remember across sessions, export to any model.",
   "version": "0.1.0",
   "publisher": "santhoshravindran7",
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.85.0"
   },
