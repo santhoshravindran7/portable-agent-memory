@@ -1,0 +1,118 @@
+{
+  "name": "portable-agent-memory",
+  "displayName": "Portable Agent Memory",
+  "description": "Persistent, portable, cryptographically-verified memory for AI agents. Remember across sessions, export to any model.",
+  "version": "0.1.0",
+  "publisher": "santhoshravindran7",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "memory",
+    "agent",
+    "copilot",
+    "claude",
+    "gpt",
+    "portable"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/santhoshravindran7/portable-agent-memory"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "pam.rememberThis",
+        "title": "PAM: Remember This"
+      },
+      {
+        "command": "pam.rememberSelection",
+        "title": "PAM: Remember Selection"
+      },
+      {
+        "command": "pam.rememberFact",
+        "title": "PAM: Remember Fact"
+      },
+      {
+        "command": "pam.recall",
+        "title": "PAM: Recall"
+      },
+      {
+        "command": "pam.search",
+        "title": "PAM: Search Memory"
+      },
+      {
+        "command": "pam.export",
+        "title": "PAM: Export Memory"
+      },
+      {
+        "command": "pam.import",
+        "title": "PAM: Import Memory"
+      },
+      {
+        "command": "pam.verify",
+        "title": "PAM: Verify Integrity"
+      },
+      {
+        "command": "pam.status",
+        "title": "PAM: Status"
+      },
+      {
+        "command": "pam.clearAll",
+        "title": "PAM: Clear All"
+      },
+      {
+        "command": "pam.refresh",
+        "title": "PAM: Refresh",
+        "icon": "$(refresh)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pam-explorer",
+          "title": "Portable Agent Memory",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "pam-explorer": [
+        {
+          "id": "pamMemoryTree",
+          "name": "Memories"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "pam.refresh",
+          "when": "view == pamMemoryTree",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}

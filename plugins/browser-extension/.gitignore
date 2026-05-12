@@ -1,0 +1,15 @@
+# Build artifacts
+node_modules/
+dist/
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Temporary
+*.log

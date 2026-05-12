@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAM — Full Memory View</title>
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+  <div class="sidebar-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path fill="#4ea8de" d="M12 2a9 9 0 0 0-9 9c0 3.07 1.53 5.78 3.87 7.41C8.24 19.41 10.03 20 12 20s3.76-.59 5.13-1.59C19.47 16.78 21 14.07 21 11a9 9 0 0 0-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7zm1-11h-2v3H8v2h3v3h2v-3h3v-2h-3V7z"/>
+        </svg>
+        <h1>Portable Agent Memory</h1>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="inject-all-btn" title="Inject All into Chat">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM5 15h14v2H5z"/></svg>
+        </button>
+        <button class="icon-btn" id="clear-all-btn" title="Clear All">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#6b7280" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" id="search-input" placeholder="Search memories...">
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="stats-bar">
+      <span class="stat"><span class="stat-num" id="stat-total">0</span> total</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="all">All</button>
+      <button class="tab" data-tab="episodic">Episodes</button>
+      <button class="tab" data-tab="semantic">Facts</button>
+      <button class="tab" data-tab="procedural">Skills</button>
+      <button class="tab" data-tab="working">Working</button>
+      <button class="tab" data-tab="identity">Identity</button>
+    </div>
+
+    <!-- Memory entries -->
+    <div class="entries-container" id="entries-container">
+      <div class="empty-state">
+        <div class="empty-icon">🧠</div>
+        <p>No memories yet</p>
+        <p class="empty-hint">Use the popup or highlight text on AI chat pages to start remembering.</p>
+      </div>
+    </div>
+
+    <!-- Bottom toolbar -->
+    <div class="bottom-bar">
+      <button class="btn btn-sm" id="export-btn">Export .pam</button>
+      <button class="btn btn-sm" id="import-btn">Import .pam</button>
+      <button class="btn btn-sm btn-primary" id="inject-selected-btn" disabled>Inject Selected</button>
+    </div>
+    <input type="file" id="import-file" accept=".pam,.json" style="display:none;">
+  </div>
+
+  <script src="../lib/pam-core.js"></script>
+  <script src="sidebar.js"></script>
+</body>
+</html>
