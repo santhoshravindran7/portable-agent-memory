@@ -481,6 +481,7 @@ def main() -> None:
         prog="pam",
         description="Portable Agent Memory — Manage AI agent memory from the command line",
     )
+    parser.add_argument("--version", action="version", version="pam 0.1.0")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     # remember

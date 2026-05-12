@@ -9,9 +9,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Check if PAM CLI is available
     const installed = await cli.isInstalled();
-    if (!installed) {
-        cli.promptInstall();
-    }
 
     // Sidebar tree view
     const sidebarProvider = new PamSidebarProvider(cli);
@@ -27,9 +24,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     registerCommands(context, cli, sidebarProvider, statusBar);
 
     // Initial data load
-    if (installed) {
-        sidebarProvider.refresh();
-        statusBar.update();
+    sidebarProvider.refresh();
+    statusBar.update();
+
+    if (!installed) {
+        cli.promptInstall();
     }
 }
 
