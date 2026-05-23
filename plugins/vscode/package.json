@@ -45,6 +45,18 @@
         "title": "PAM: Remember Fact"
       },
       {
+        "command": "pam.rememberSkill",
+        "title": "PAM: Remember Skill"
+      },
+      {
+        "command": "pam.rememberWorking",
+        "title": "PAM: Remember Working Memory"
+      },
+      {
+        "command": "pam.rememberPreference",
+        "title": "PAM: Remember Preference"
+      },
+      {
         "command": "pam.recall",
         "title": "PAM: Recall"
       },

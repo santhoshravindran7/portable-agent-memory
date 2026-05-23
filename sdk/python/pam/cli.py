@@ -33,6 +33,7 @@ from pam.models.entries import (
     IdentityEntry,
     ProceduralEntry,
     SemanticEntry,
+    WorkingEntry,
 )
 from pam.rehydration.engine import RehydrationEngine
 from pam.transport.file import FileTransport
@@ -142,6 +143,15 @@ def cmd_remember(args: argparse.Namespace) -> None:
         _save(artifact)
         print(f"  Preference saved: {pref_dict}")
 
+    elif args.working:
+        goals = args.working
+        scratch = getattr(args, "scratch", "")
+        artifact.working.append(
+            WorkingEntry(goals=goals, scratch=scratch, subgoals=[], pending_actions=[])
+        )
+        _save(artifact)
+        print(f"  Working memory saved: {len(goals)} goal(s)")
+
     elif args.text:
         observation = " ".join(args.text)
         artifact.episodic.append(
@@ -157,7 +167,7 @@ def cmd_remember(args: argparse.Namespace) -> None:
         print(f"  Remembered: {observation}")
 
     else:
-        print("Error: provide text to remember, or use --fact/--skill/--preference")
+        print("Error: provide text to remember, or use --fact/--skill/--preference/--working")
         sys.exit(1)
 
     total = len(artifact.all_entries())
@@ -187,11 +197,11 @@ def cmd_recall(args: argparse.Namespace) -> None:
             elif hasattr(e, "subject"):
                 text = f"{e.subject} {e.predicate} {e.object}"
             elif hasattr(e, "name"):
-                text = f"{e.name} {e.description}"
+                text = f"{e.name} {e.description} {e.body}"
             elif hasattr(e, "persona"):
-                text = f"{e.persona} {e.preferences}"
+                text = f"{e.persona} {e.preferences} {' '.join(e.policies)} {e.custom_instructions}"
             elif hasattr(e, "goals"):
-                text = " ".join(e.goals)
+                text = f"{' '.join(e.goals)} {e.scratch}"
             if query in text.lower():
                 filtered.append(e)
         entries = filtered
@@ -216,12 +226,18 @@ def cmd_recall(args: argparse.Namespace) -> None:
                 item["content"] = e.description
                 item["name"] = e.name
                 item["description"] = e.description
+                item["body"] = e.body
             elif hasattr(e, "persona"):
                 item["type"] = "identity"
                 item["content"] = str(e.preferences) if e.preferences else e.persona
+                item["preferences"] = e.preferences
+                item["persona"] = e.persona
+                item["policies"] = e.policies
             elif hasattr(e, "goals"):
                 item["type"] = "working"
                 item["content"] = ", ".join(e.goals)
+                item["goals"] = e.goals
+                item["scratch"] = e.scratch
             result.append(item)
         print(json.dumps(result))
         return
@@ -398,9 +414,12 @@ def cmd_inspect(args: argparse.Namespace) -> None:
 
 def cmd_verify(args: argparse.Namespace) -> None:
     """Verify integrity of a .pam file."""
-    path = Path(args.file)
+    path = Path(args.file) if args.file else CURRENT_ARTIFACT
     if not path.exists():
-        print(f"  File not found: {path}")
+        if args.file:
+            print(f"  File not found: {path}")
+        else:
+            print("  No memories to verify.")
         sys.exit(1)
 
     artifact = FileTransport.load(str(path))
@@ -493,6 +512,9 @@ def main() -> None:
                             help="Remember a skill: name description [body]")
     p_remember.add_argument("--preference", nargs="+", metavar="KEY=VALUE",
                             help="Remember preferences (key=value pairs)")
+    p_remember.add_argument("--working", nargs="+", metavar="GOAL",
+                            help="Remember working-memory goals")
+    p_remember.add_argument("--scratch", default="", help="Scratch-pad notes for working memory")
 
     # recall
     p_recall = subparsers.add_parser("recall", help="Show stored memories")
@@ -516,7 +538,7 @@ def main() -> None:
 
     # verify
     p_verify = subparsers.add_parser("verify", help="Verify integrity of a .pam file")
-    p_verify.add_argument("file", help="Path to .pam file")
+    p_verify.add_argument("file", nargs="?", default=None, help="Path to .pam file (defaults to current memory)")
     p_verify.add_argument("--pubkey", help="Path to public key file for signature verification")
 
     # status

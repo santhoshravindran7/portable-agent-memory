@@ -2,6 +2,7 @@ import * as child_process from 'child_process';
 import * as vscode from 'vscode';
 
 const PAM_INSTALL_URL = 'git+https://github.com/santhoshravindran7/portable-agent-memory.git@main#subdirectory=sdk/python';
+const INSTALL_PROMPT_DISMISSED_KEY = 'pam.installPromptDismissed';
 
 export interface PamStatus {
     total: number;
@@ -27,6 +28,8 @@ export interface PamMemory {
 export class PamCli {
     private pamPath: string = 'pam';
 
+    constructor(private readonly context?: vscode.ExtensionContext) {}
+
     async isInstalled(): Promise<boolean> {
         try {
             await this.exec(['--version']);
@@ -36,17 +39,30 @@ export class PamCli {
         }
     }
 
-    async promptInstall(): Promise<void> {
+    isInstallPromptDismissed(globalState?: vscode.Memento): boolean {
+        const state = globalState ?? this.context?.globalState;
+        if (!state) {
+            return false;
+        }
+
+        return state.get<boolean>(INSTALL_PROMPT_DISMISSED_KEY, false);
+    }
+
+    async promptInstall(globalState?: vscode.Memento): Promise<void> {
+        const state = globalState ?? this.context?.globalState;
         const action = await vscode.window.showWarningMessage(
             'PAM CLI is not installed. Install it to use Portable Agent Memory.',
             'Install Now',
-            'Cancel'
+            'Remind Me Later',
+            "Don't Show Again"
         );
         if (action === 'Install Now') {
             const pip = await this.findPip();
             const terminal = vscode.window.createTerminal('PAM Install');
             terminal.show();
             terminal.sendText(`${pip} install "${PAM_INSTALL_URL}"`);
+        } else if (action === "Don't Show Again" && state) {
+            await state.update(INSTALL_PROMPT_DISMISSED_KEY, true);
         }
     }
 
@@ -76,6 +92,18 @@ export class PamCli {
 
     async rememberSkill(name: string, description: string): Promise<string> {
         return this.exec(['remember', '--skill', name, description]);
+    }
+
+    async rememberWorking(goals: string[], scratch?: string): Promise<string> {
+        const args = ['remember', '--working', ...goals];
+        if (scratch) {
+            args.push('--scratch', scratch);
+        }
+        return this.exec(args);
+    }
+
+    async rememberPreference(preferences: string[]): Promise<string> {
+        return this.exec(['remember', '--preference', ...preferences]);
     }
 
     async recall(): Promise<PamMemory[]> {
@@ -118,7 +146,7 @@ export class PamCli {
     }
 
     async clearAll(): Promise<string> {
-        return this.exec(['clear', '--yes']);
+        return this.exec(['clear', '--force']);
     }
 
     private exec(args: string[]): Promise<string> {

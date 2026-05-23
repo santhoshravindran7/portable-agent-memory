@@ -80,6 +80,67 @@ export function registerCommands(
             }
         }),
 
+        vscode.commands.registerCommand('pam.rememberSkill', async () => {
+            const name = await vscode.window.showInputBox({
+                prompt: 'Skill name (e.g., "deploy-k8s")',
+                placeHolder: 'Skill name',
+            });
+            if (!name) { return; }
+
+            const description = await vscode.window.showInputBox({
+                prompt: 'Skill description',
+                placeHolder: 'What does this skill do?',
+            });
+            if (!description) { return; }
+
+            try {
+                await cli.rememberSkill(name, description);
+                vscode.window.showInformationMessage(`PAM: Skill saved: ${name}`);
+                refresh();
+            } catch (e: any) {
+                vscode.window.showErrorMessage(`PAM: ${e.message}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('pam.rememberWorking', async () => {
+            const goalsInput = await vscode.window.showInputBox({
+                prompt: 'Working memory goals (comma-separated)',
+                placeHolder: 'e.g., Fix auth bug, Deploy to staging',
+            });
+            if (!goalsInput) { return; }
+
+            const scratch = await vscode.window.showInputBox({
+                prompt: 'Scratch notes (optional)',
+                placeHolder: 'Any scratch notes...',
+            });
+
+            const goals = goalsInput.split(',').map(g => g.trim()).filter(g => g.length > 0);
+            try {
+                await cli.rememberWorking(goals, scratch || undefined);
+                vscode.window.showInformationMessage(`PAM: Working memory saved with ${goals.length} goal(s)`);
+                refresh();
+            } catch (e: any) {
+                vscode.window.showErrorMessage(`PAM: ${e.message}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('pam.rememberPreference', async () => {
+            const input = await vscode.window.showInputBox({
+                prompt: 'Preferences (key=value, comma-separated)',
+                placeHolder: 'e.g., theme=dark, language=TypeScript',
+            });
+            if (!input) { return; }
+
+            const prefs = input.split(',').map(p => p.trim()).filter(p => p.length > 0);
+            try {
+                await cli.rememberPreference(prefs);
+                vscode.window.showInformationMessage('PAM: Preferences saved');
+                refresh();
+            } catch (e: any) {
+                vscode.window.showErrorMessage(`PAM: ${e.message}`);
+            }
+        }),
+
         vscode.commands.registerCommand('pam.recall', async () => {
             try {
                 const memories = await cli.recall();
