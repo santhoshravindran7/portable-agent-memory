@@ -144,11 +144,43 @@ print(context)  # Ready to inject into any LLM's context window
 | [`06_cross_model_validation.py`](examples/06_cross_model_validation.py) | Prove memory portability with secret facts + tamper detection |
 | [`07_enterprise_vendor_migration.py`](examples/07_enterprise_vendor_migration.py) | Healthcare AI vendor migration (Claude → GPT) with HIPAA compliance |
 | [`08_session_continuity.py`](examples/08_session_continuity.py) | Accumulate knowledge across 3 sessions — defeat session amnesia |
+| [`09_evaluation_metrics.py`](examples/09_evaluation_metrics.py) | Measure transfer quality with TCS & RHF (spec §10) |
 
 Run any example:
 ```bash
 cd pam-protocol
 python examples/02_cross_model_transfer.py
+```
+
+## Measuring Transfer Quality
+
+A transfer that "works" isn't enough — you want to know *how faithfully* the
+target agent reproduces the source. The SDK implements the two metrics from
+spec §10:
+
+- **Transfer Continuity Score (TCS)** — does the target complete the source's tasks after re-hydration?
+- **Re-Hydration Fidelity (RHF)** — how semantically similar are the target's responses to the source's?
+
+```python
+from pam.metrics import evaluate_transfer, ProbeTask
+
+report = evaluate_transfer(
+    source_agent_fn=source_agent,   # any callable: prompt -> response
+    target_agent_fn=target_agent,   # the re-hydrated agent
+    tasks=[ProbeTask(id="t1", prompt="What port does the DB use?", expect_substring="5433")],
+    questions=["Summarize the production database configuration."],
+)
+print(report.metrics.tcs, report.metrics.rhf)
+print(report.summary())   # spec-aligned interpretation bands
+```
+
+RHF is embedding-agnostic: it uses a dependency-free lexical similarity by
+default, or pass any `embed_fn` (e.g. `text-embedding-3-large`) for real semantic
+scoring. You can also compute metrics from a recorded probe-results file:
+
+```bash
+pam evaluate results.json          # human-readable report
+pam evaluate results.json --json   # standardized report (spec §10.3)
 ```
 
 ## Project Structure
@@ -167,9 +199,10 @@ pam-protocol/
 │   │   ├── provenance/          # Merkle-DAG graph operations
 │   │   ├── capabilities/        # Capability tokens & validation
 │   │   ├── rehydration/         # Re-hydration engine (6-step pipeline)
+│   │   ├── metrics/             # TCS / RHF evaluation metrics (spec §10)
 │   │   ├── serialization/       # JSON (pretty + canonical) & CBOR codecs
 │   │   └── transport/           # File-based transport (.pam JSON, .pam.cbor)
-│   └── tests/                   # 54 tests
+│   └── tests/                   # 104 tests
 ├── examples/                    # 8 runnable demo scripts
 ├── plugins/
 │   ├── github-copilot/          # GitHub Copilot Extension (Marketplace)
@@ -218,7 +251,7 @@ pam-protocol/
 ## Roadmap
 
 - [x] Protocol Specification v1.0
-- [x] Python SDK with 54 tests
+- [x] Python SDK with 104 tests
 - [x] JSON Schemas
 - [x] Working examples (8 scenarios)
 - [x] CLI tool (`pam remember`, `pam recall`, etc.)
