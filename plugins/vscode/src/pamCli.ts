@@ -17,12 +17,32 @@ export interface PamMemory {
     id: string;
     type: string;
     content: string;
-    timestamp: string;
+    timestamp?: string;
+    // episodic
+    actor?: string;
+    salience?: number;
+    event_type?: string;
+    // semantic
     subject?: string;
     predicate?: string;
     object?: string;
+    confidence?: number;
+    // procedural
     name?: string;
     description?: string;
+    body?: string;
+    language?: string;
+    parameters?: string[];
+    // working
+    goals?: string[];
+    subgoals?: string[];
+    scratch?: string;
+    pending_actions?: Array<{action: string}>;
+    // identity
+    preferences?: Record<string, string>;
+    persona?: string;
+    policies?: string[];
+    custom_instructions?: string;
 }
 
 export class PamCli {

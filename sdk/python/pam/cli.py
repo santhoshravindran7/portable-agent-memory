@@ -225,29 +225,38 @@ def cmd_recall(args: argparse.Namespace) -> None:
                 item["type"] = "episodic"
                 item["content"] = e.observation
                 item["timestamp"] = e.timestamp
+                item["actor"] = e.actor
+                item["salience"] = e.salience
+                item["event_type"] = e.event_type
             elif hasattr(e, "subject"):
                 item["type"] = "semantic"
                 item["content"] = f"{e.subject} {e.predicate} {e.object}"
                 item["subject"] = e.subject
                 item["predicate"] = e.predicate
                 item["object"] = e.object
+                item["confidence"] = e.confidence
             elif hasattr(e, "name"):
                 item["type"] = "procedural"
                 item["content"] = e.description
                 item["name"] = e.name
                 item["description"] = e.description
                 item["body"] = e.body
+                item["language"] = e.language
+                item["parameters"] = e.parameters
             elif hasattr(e, "persona"):
                 item["type"] = "identity"
                 item["content"] = str(e.preferences) if e.preferences else e.persona
                 item["preferences"] = e.preferences
                 item["persona"] = e.persona
                 item["policies"] = e.policies
+                item["custom_instructions"] = e.custom_instructions
             elif hasattr(e, "goals"):
                 item["type"] = "working"
                 item["content"] = ", ".join(e.goals)
                 item["goals"] = e.goals
+                item["subgoals"] = e.subgoals
                 item["scratch"] = e.scratch
+                item["pending_actions"] = e.pending_actions
             result.append(item)
         print(json.dumps(result))
         return
