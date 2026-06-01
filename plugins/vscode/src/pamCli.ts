@@ -90,20 +90,34 @@ export class PamCli {
         return this.exec(['remember', '--fact', subject, predicate, object]);
     }
 
-    async rememberSkill(name: string, description: string): Promise<string> {
-        return this.exec(['remember', '--skill', name, description]);
-    }
-
-    async rememberWorking(goals: string[], scratch?: string): Promise<string> {
-        const args = ['remember', '--working', ...goals];
-        if (scratch) {
-            args.push('--scratch', scratch);
+    async rememberSkill(name: string, description: string, body?: string): Promise<string> {
+        const args = ['remember', '--skill', name, description];
+        if (body) {
+            args.push(body);
         }
         return this.exec(args);
     }
 
-    async rememberPreference(preferences: string[]): Promise<string> {
-        return this.exec(['remember', '--preference', ...preferences]);
+    async rememberWorking(goals: string[], scratch?: string, pendingActions?: string[]): Promise<string> {
+        const args = ['remember', '--working', ...goals];
+        if (scratch) {
+            args.push('--scratch', scratch);
+        }
+        if (pendingActions && pendingActions.length > 0) {
+            args.push('--pending', ...pendingActions);
+        }
+        return this.exec(args);
+    }
+
+    async rememberPreference(preferences: string[], persona?: string, policies?: string[]): Promise<string> {
+        const args = ['remember', '--preference', ...preferences];
+        if (persona) {
+            args.push('--persona', persona);
+        }
+        if (policies && policies.length > 0) {
+            args.push('--policies', ...policies);
+        }
+        return this.exec(args);
     }
 
     async recall(): Promise<PamMemory[]> {

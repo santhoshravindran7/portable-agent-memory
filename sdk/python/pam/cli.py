@@ -137,20 +137,30 @@ def cmd_remember(args: argparse.Namespace) -> None:
                 pref_dict[k.strip()] = v.strip()
             else:
                 pref_dict[item] = True
+        persona = getattr(args, "persona", "") or ""
+        policies = getattr(args, "policies", []) or []
         artifact.identity.append(
-            IdentityEntry(preferences=pref_dict, persona="", policies=[])
+            IdentityEntry(preferences=pref_dict, persona=persona, policies=policies)
         )
         _save(artifact)
         print(f"  Preference saved: {pref_dict}")
+        if persona:
+            print(f"  Persona: {persona}")
+        if policies:
+            print(f"  Policies: {', '.join(policies)}")
 
     elif args.working:
         goals = args.working
         scratch = getattr(args, "scratch", "")
+        pending = getattr(args, "pending", []) or []
+        pending_actions = [{"action": a} for a in pending] if pending else []
         artifact.working.append(
-            WorkingEntry(goals=goals, scratch=scratch, subgoals=[], pending_actions=[])
+            WorkingEntry(goals=goals, scratch=scratch, subgoals=[], pending_actions=pending_actions)
         )
         _save(artifact)
         print(f"  Working memory saved: {len(goals)} goal(s)")
+        if pending_actions:
+            print(f"  Pending actions: {len(pending_actions)}")
 
     elif args.text:
         observation = " ".join(args.text)
@@ -515,6 +525,12 @@ def main() -> None:
     p_remember.add_argument("--working", nargs="+", metavar="GOAL",
                             help="Remember working-memory goals")
     p_remember.add_argument("--scratch", default="", help="Scratch-pad notes for working memory")
+    p_remember.add_argument("--pending", nargs="+", metavar="ACTION",
+                            help="Pending actions for working memory")
+    p_remember.add_argument("--persona", default="",
+                            help="Persona description for identity/preference memory")
+    p_remember.add_argument("--policies", nargs="+", metavar="POLICY",
+                            help="Policies for identity/preference memory")
 
     # recall
     p_recall = subparsers.add_parser("recall", help="Show stored memories")

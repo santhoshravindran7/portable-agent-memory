@@ -43,9 +43,22 @@ export function registerCommands(
                 vscode.window.showWarningMessage('PAM: No text selected.');
                 return;
             }
+
+            const name = await vscode.window.showInputBox({
+                prompt: 'Skill name for this code selection',
+                placeHolder: 'e.g., auth-middleware, tasks-router',
+            });
+            if (!name) { return; }
+
+            const description = await vscode.window.showInputBox({
+                prompt: 'Brief description of what this code does',
+                placeHolder: 'e.g., JWT validation middleware for Express',
+            });
+            if (!description) { return; }
+
             try {
-                await cli.remember(selection);
-                vscode.window.showInformationMessage(`PAM: Remembered selection (${selection.length} chars)`);
+                await cli.rememberSkill(name, description, selection);
+                vscode.window.showInformationMessage(`PAM: Skill saved: ${name} (${selection.length} chars)`);
                 refresh();
             } catch (e: any) {
                 vscode.window.showErrorMessage(`PAM: ${e.message}`);
@@ -93,8 +106,13 @@ export function registerCommands(
             });
             if (!description) { return; }
 
+            const body = await vscode.window.showInputBox({
+                prompt: 'Skill body/command (optional - press Enter to skip)',
+                placeHolder: 'e.g., kubectl apply -f deploy.yaml',
+            });
+
             try {
-                await cli.rememberSkill(name, description);
+                await cli.rememberSkill(name, description, body || undefined);
                 vscode.window.showInformationMessage(`PAM: Skill saved: ${name}`);
                 refresh();
             } catch (e: any) {
@@ -110,13 +128,22 @@ export function registerCommands(
             if (!goalsInput) { return; }
 
             const scratch = await vscode.window.showInputBox({
-                prompt: 'Scratch notes (optional)',
-                placeHolder: 'Any scratch notes...',
+                prompt: 'Scratch notes (optional - press Enter to skip)',
+                placeHolder: 'Any scratch notes or context...',
+            });
+
+            const pendingInput = await vscode.window.showInputBox({
+                prompt: 'Pending actions (comma-separated, optional - press Enter to skip)',
+                placeHolder: 'e.g., Review PR #42, Update docs',
             });
 
             const goals = goalsInput.split(',').map(g => g.trim()).filter(g => g.length > 0);
+            const pendingActions = pendingInput
+                ? pendingInput.split(',').map(a => a.trim()).filter(a => a.length > 0)
+                : [];
+
             try {
-                await cli.rememberWorking(goals, scratch || undefined);
+                await cli.rememberWorking(goals, scratch || undefined, pendingActions.length > 0 ? pendingActions : undefined);
                 vscode.window.showInformationMessage(`PAM: Working memory saved with ${goals.length} goal(s)`);
                 refresh();
             } catch (e: any) {
@@ -131,9 +158,23 @@ export function registerCommands(
             });
             if (!input) { return; }
 
+            const persona = await vscode.window.showInputBox({
+                prompt: 'Persona description (optional - press Enter to skip)',
+                placeHolder: 'e.g., Senior backend engineer focused on performance',
+            });
+
+            const policiesInput = await vscode.window.showInputBox({
+                prompt: 'Policies (comma-separated, optional - press Enter to skip)',
+                placeHolder: 'e.g., Never use var, Always write tests first',
+            });
+
             const prefs = input.split(',').map(p => p.trim()).filter(p => p.length > 0);
+            const policies = policiesInput
+                ? policiesInput.split(',').map(p => p.trim()).filter(p => p.length > 0)
+                : [];
+
             try {
-                await cli.rememberPreference(prefs);
+                await cli.rememberPreference(prefs, persona || undefined, policies.length > 0 ? policies : undefined);
                 vscode.window.showInformationMessage('PAM: Preferences saved');
                 refresh();
             } catch (e: any) {
