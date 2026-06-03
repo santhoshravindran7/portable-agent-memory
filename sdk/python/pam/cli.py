@@ -10,6 +10,7 @@ Usage:
     pam import colleague_memory.pam
     pam inspect my_memory.pam
     pam verify my_memory.pam
+    pam evaluate results.json
     pam status
 """
 
@@ -458,6 +459,117 @@ def cmd_verify(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def cmd_evaluate(args: argparse.Namespace) -> None:
+    """Compute TCS/RHF metrics from a recorded probe-results file (spec §10).
+
+    The input JSON records per-task source/target success and aligned
+    source/target responses, e.g.::
+
+        {
+          "evaluation_id": "eval:2026-01-15-001",
+          "source_agent": {"name": "alpha", "model_family": "gpt-4"},
+          "target_agent": {"name": "beta", "model_family": "claude-3"},
+          "artifact_id": "blake3:...",
+          "rehydration_config": {"token_budget": 4096, "relevance_threshold": 0.3,
+                                  "format_style": "xml"},
+          "probe_tasks": [
+            {"id": "t1", "source_success": true, "target_success": true}
+          ],
+          "probe_questions": [
+            {"id": "q1", "source_response": "...", "target_response": "..."}
+          ]
+        }
+    """
+    from pam.metrics import (
+        AgentDescriptor,
+        EvaluationReport,
+        Metrics,
+        RehydrationConfigSummary,
+        rehydration_fidelity,
+        transfer_continuity_score,
+    )
+
+    path = Path(args.file)
+    if not path.exists():
+        print(f"  File not found: {path}")
+        sys.exit(1)
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        print(f"  Could not parse {path}: {exc}")
+        sys.exit(1)
+
+    metrics = Metrics()
+
+    tasks = data.get("probe_tasks", [])
+    if tasks:
+        source_results = [bool(t.get("source_success")) for t in tasks]
+        target_results = [bool(t.get("target_success")) for t in tasks]
+        try:
+            metrics.tcs = transfer_continuity_score(source_results, target_results)
+        except ValueError as exc:
+            print(f"  Could not compute TCS: {exc}")
+            sys.exit(1)
+        metrics.probe_task_count = len(tasks)
+
+    questions = data.get("probe_questions", [])
+    if questions:
+        source_responses = [q.get("source_response", "") for q in questions]
+        target_responses = [q.get("target_response", "") for q in questions]
+        try:
+            metrics.rhf = rehydration_fidelity(source_responses, target_responses)
+        except ValueError as exc:
+            print(f"  Could not compute RHF: {exc}")
+            sys.exit(1)
+        metrics.probe_question_count = len(questions)
+
+    report = EvaluationReport(
+        evaluation_id=data.get("evaluation_id", ""),
+        source_agent=AgentDescriptor(**data.get("source_agent", {})),
+        target_agent=AgentDescriptor(**data.get("target_agent", {})),
+        artifact_id=data.get("artifact_id", ""),
+        rehydration_config=RehydrationConfigSummary(
+            **data.get("rehydration_config", {})
+        ),
+        metrics=metrics,
+        timestamp=data.get("timestamp", ""),
+    )
+
+    if getattr(args, "json", False):
+        print(report.to_json())
+        if args.output:
+            Path(args.output).write_text(report.to_json(), encoding="utf-8")
+        return
+
+    print("\n  Portable Agent Memory — Evaluation Report")
+    if report.evaluation_id:
+        print(f"  ID:      {report.evaluation_id}")
+    print(f"  Source:  {report.source_agent.name} ({report.source_agent.model_family})")
+    print(f"  Target:  {report.target_agent.name} ({report.target_agent.model_family})")
+    print()
+    if metrics.tcs is not None:
+        print(f"  TCS: {metrics.tcs:.2f}  ({metrics.probe_task_count} probe tasks)")
+    else:
+        print("  TCS: n/a  (no probe tasks provided)")
+    if metrics.rhf is not None:
+        print(
+            f"  RHF: {metrics.rhf:.2f}  ({metrics.probe_question_count} probe questions)"
+        )
+    else:
+        print("  RHF: n/a  (no probe questions provided)")
+    summary = report.summary()
+    if summary:
+        print()
+        for line in summary.split("\n"):
+            print(f"  {line}")
+    print()
+
+    if args.output:
+        Path(args.output).write_text(report.to_json(), encoding="utf-8")
+        print(f"  Report written to {args.output}")
+
+
 def cmd_status(args: argparse.Namespace) -> None:
     """Show Portable Agent Memory status."""
     if getattr(args, "json", False):
@@ -566,6 +678,18 @@ def main() -> None:
     p_verify.add_argument("file", nargs="?", default=None, help="Path to .pam file (defaults to current memory)")
     p_verify.add_argument("--pubkey", help="Path to public key file for signature verification")
 
+    # evaluate
+    p_evaluate = subparsers.add_parser(
+        "evaluate", help="Compute TCS/RHF transfer metrics from a probe-results file"
+    )
+    p_evaluate.add_argument("file", help="Path to a probe-results JSON file")
+    p_evaluate.add_argument(
+        "--output", help="Write the standardized report JSON to this path"
+    )
+    p_evaluate.add_argument(
+        "--json", action="store_true", help="Output report as JSON (for integrations)"
+    )
+
     # status
     p_status = subparsers.add_parser("status", help="Show Portable Agent Memory status")
     p_status.add_argument("--json", action="store_true", help="Output as JSON (for integrations)")
@@ -587,6 +711,7 @@ def main() -> None:
         "import": cmd_import,
         "inspect": cmd_inspect,
         "verify": cmd_verify,
+        "evaluate": cmd_evaluate,
         "status": cmd_status,
         "clear": cmd_clear,
     }
