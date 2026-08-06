@@ -1,0 +1,9 @@
+# Lightweight, offline-friendly dependency set: BM25 lexical retrieval only,
+# no torch / sentence-transformers. Build with:
+#   docker build --build-arg REQUIREMENTS=requirements-lite.txt --build-arg PREFETCH_MODEL=0 ...
+# and run with USE_EMBEDDINGS=0.
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.0
+numpy>=1.24
+rank-bm25>=0.2.2

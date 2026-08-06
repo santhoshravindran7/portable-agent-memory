@@ -1,0 +1,9 @@
+# Add/Search adapter runtime dependencies.
+# The Portable Agent Memory SDK (pam-sdk) is installed separately from ../../sdk/python
+# (see Dockerfile) and pulls in blake3, cbor2, cryptography, pydantic.
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.0
+numpy>=1.24
+rank-bm25>=0.2.2
+sentence-transformers>=2.2
